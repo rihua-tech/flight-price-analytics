@@ -173,11 +173,8 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
 3.**Install dependencies**
 
    ```bash
-   pip install -r requirements.txt
+  pip install -r requirements.txt
 
-Or 
-
-  ```bash
   pip install pandas numpy scikit-learn matplotlib
 
 
