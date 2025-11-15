@@ -158,7 +158,7 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
    git clone https://github.com/rihua-tech/flight-price-analytics.git
    cd flight-price-analytics
 
-2. **(Optional) Create and activate a virtual env**
+2. **Create and activate a virtual env**
 
     ```bash
    python -m venv .venv
@@ -177,8 +177,7 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
 
   pip install pandas numpy scikit-learn matplotlib
 
-
-4.**Run the script**
+4.Run the script
  
   ```bash
   python 10_Flight_Price_Buy_Wait_ML.py
