@@ -156,55 +156,54 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
    git clone https://github.com/rihua-tech/flight-price-analytics.git
    cd flight-price-analytics
    
-2.**Create and activate a virtual env**
+## 2.Create and activate a virtual env
 
-
+```bash
 python -m venv .venv
-.venv\Scripts\activate          # Windows
-# source .venv/bin/activate     # macOS / Linux
+
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # macOS / Linux
 
 
 
-3.**Install dependencies**
+```markdown
+## 3. Install dependencies
 
-Create a requirements.txt with at least:
+Create a file called `requirements.txt` with at least:
 
+```text
 pandas
 numpy
 scikit-learn
 matplotlib
-
-
-Then:
-
 pip install -r requirements.txt
 
 
-4.**Run the script**
 
+```markdown
+## 4. Run the script
+
+```bash
 python 10_Flight_Price_Buy_Wait_ML.py
 
 
-You should see:
+You should see in the console:
+Label distribution.
+Logistic regression metrics + ROC AUC.
+Random forest metrics + ROC AUC.
+Baseline (“always Buy”) comparison.
 
-label distribution,
 
-logistic regression metrics + ROC AUC,
+```markdown
+## 6. What This Project Shows
 
-random forest metrics + ROC AUC,
+This repo is designed as a portfolio piece for **Data Analyst / Junior Data Scientist** roles:
 
-baseline (“always Buy”) comparison.
+- Turn a vague business question into a clear **problem statement**.
+- Use **Python + SQL** for cleaning, EDA, and hypothesis testing.
+- Think in **time-series / lead-time** terms, not just static tables.
+- Build and evaluate **ML models** with **time-based validation**.
+- Communicate results via **Power BI dashboards**, PDFs, and slides.
 
-6. **What This Project Shows**
+Feel free to open issues or suggest improvements (new features, different models, alternative evaluation).
 
-This repo is designed as a portfolio piece for Data Analyst / Junior Data Scientist roles:
-
-Turn a vague business question into a clear problem statement.
-
-Use Python + SQL for cleaning, EDA, and hypothesis testing.
-
-Think in time-series / lead-time terms, not just static tables.
-
-Build and evaluate ML models with time-based validation.
-
-Communicate results via Power BI dashboards, PDFs, and slides.
