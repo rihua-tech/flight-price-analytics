@@ -175,15 +175,14 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
    ```bash
    pip install -r requirements.txt
 
-   ```bash
    pip install pandas numpy scikit-learn matplotlib
-
 
 4. **Run the script**
  
-  ```bash
-  python 10_Flight_Price_Buy_Wait_ML.py
+   ```bash
+   python 10_Flight_Price_Buy_Wait_ML.py
 
+5.**Outcome**
 
 You should see in the console:
 label distribution
