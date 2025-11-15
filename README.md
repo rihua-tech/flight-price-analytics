@@ -163,29 +163,31 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
     ```bash
    python -m venv .venv
 
-#### Windows
-.venv\Scripts\activate
+   #### Windows
+   .venv\Scripts\activate
 
-#### macOS / Linux
-source .venv/bin/activate
+   #### macOS / Linux
+   source .venv/bin/activate
 
 
 3.**Install dependencies**
 
 If you have requirements.txt:
 
-  ```bash
+   ```bash
    pip install -r requirements.txt
 
 Or install a minimal set manually:
 
-  ```bash
+   ```bash
    pip install pandas numpy scikit-learn matplotlib
 
-4.**Run the script**
 
+4.**Run the script**
+ 
   ```bash
   python 10_Flight_Price_Buy_Wait_ML.py
+
 
 You should see in the console:
 label distribution
