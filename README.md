@@ -145,65 +145,30 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
    - Input: a single snapshot’s features.
    - Output: `"Buy"` / `"Wait"` + probability of **Wait**.
    - Ready to feed into app logic or alerts.
-
----
-
+     
 ## 5. How to Run the Buy/Wait ML Script
 
 1. **Clone the repo**
 
    ```bash
-   git clone https://github.com/rihua-tech/flight-price-analytics.git
+   git clone https://github.com/<your-username>/flight-price-analytics.git
    cd flight-price-analytics
-   
-## 2.Create and activate a virtual env
+---
+
+## Setup & Run
+
+1. (Optional) Create a virtual env
 
 ```bash
 python -m venv .venv
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate  # macOS / Linux
 
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # macOS / Linux
+python -m venv .venv
 
+# Windows
+.venv\Scripts\activate
 
-
-```markdown
-## 3. Install dependencies
-
-Create a file called `requirements.txt` with at least:
-
-```text
-pandas
-numpy
-scikit-learn
-matplotlib
-pip install -r requirements.txt
-
-
-
-```markdown
-## 4. Run the script
-
-```bash
-python 10_Flight_Price_Buy_Wait_ML.py
-
-
-You should see in the console:
-Label distribution.
-Logistic regression metrics + ROC AUC.
-Random forest metrics + ROC AUC.
-Baseline (“always Buy”) comparison.
-
-
-```markdown
-## 6. What This Project Shows
-
-This repo is designed as a portfolio piece for **Data Analyst / Junior Data Scientist** roles:
-
-- Turn a vague business question into a clear **problem statement**.
-- Use **Python + SQL** for cleaning, EDA, and hypothesis testing.
-- Think in **time-series / lead-time** terms, not just static tables.
-- Build and evaluate **ML models** with **time-based validation**.
-- Communicate results via **Power BI dashboards**, PDFs, and slides.
-
-Feel free to open issues or suggest improvements (new features, different models, alternative evaluation).
+# macOS / Linux
+source .venv/bin/activate
 
