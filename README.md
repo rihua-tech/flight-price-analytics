@@ -140,47 +140,13 @@ Script 09_flight_buy_wait_ml.py (refactored pipeline) and notebook 10_Flight_Pri
    - Random Forest feature importance plot (which features drive Buy vs Wait).
 
 
-## 5. How to Run the Buy/Wait ML Script
-
-Clone the repo
-
-git clone https://github.com/rihua-tech/flight-price-analytics.git
-cd flight-price-analytics
-
-Create and activate a virtual env
-
-python -m venv .venv
-
-#### Windows
-.venv\Scripts\activate
-
-#### macOS / Linux
-source .venv/bin/activate
-
-Install dependencies (minimal)
-
-pip install pandas numpy scikit-learn matplotlib
-
-Run the script
-
-python 09_flight_buy_wait_ml.py
-
-You should see in the console:
-
-- basic label distribution (Buy vs Wait)
-- baseline (“always Buy”) classification report
-- logistic regression metrics + ROC AUC
-- random forest metrics + ROC AUC
-- a Random Forest feature importance chart popping up
 
 
 ## 5. How to Run the Buy/Wait ML Script
 
 1. **Clone the repo**
 
-   ```bash
-   git clone https://github.com/rihua-tech/flight-price-analytics.git
-   cd flight-price-analytics
+ git clone https://github.com/rihua-tech/flight-price-analytics.git
 
 2. **Create and activate a virtual env**
 
@@ -208,17 +174,15 @@ You should see in the console:
 4. **Run the script**
  
    ```bash
-   python 10_Flight_Price_Buy_Wait_ML.py
+   python 09_flight_buy_wait_ml.py
 
 
    ```
    You should see in the console:
    
-   label distribution
-   
-   logistic regression metrics + ROC AUC
-   
-   random forest metrics + ROC AUC
-   
-   baseline (“always Buy”) comparison
+- basic label distribution (Buy vs Wait)
+- baseline (“always Buy”) classification report
+- logistic regression metrics + ROC AUC
+- random forest metrics + ROC AUC
+- a Random Forest feature importance chart popping up
 
