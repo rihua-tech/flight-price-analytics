@@ -57,8 +57,8 @@ High-level framing:
 - `05_Wrangling_EDA.ipynb` – data wrangling and sanity checks.
 - `06_Forecast_Backtest.ipynb` – forecasting backtests (baselines + ARIMA/Prophet).
 - `07_Hypothesis_Tests.ipynb` – weekend vs weekday, short vs long lead-time tests.
-- `09_flight_buy_wait_ml.ipynb` – **Buy/Wait ML notebook** (features, models, ROC curves).
-- `10_Flight_Price_Buy_Wait_ML.py` – end-to-end Python script for the Buy/Wait model.
+- `09_flight_buy_wait_ml.py` – refactored end-to-end Buy/Wait ML pipeline (labeling, feature engineering, models, ROC AUC, feature importance).
+- `10_Flight_Price_Buy_Wait_ML.ipynb` – earlier Buy/Wait ML notebook (exploratory version, optional).
 
 ### Dashboards
 
@@ -105,7 +105,7 @@ Notebook `07_Hypothesis_Tests.ipynb`:
 
 ### 4.4 Buy/Wait ML Model (Python, scikit-learn)
 
-Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.py`:
+Script 09_flight_buy_wait_ml.py (refactored pipeline) and notebook 10_Flight_Price_Buy_Wait_ML.ipynb:
 
 1. **Label definition**
 
@@ -137,17 +137,41 @@ Notebook `09_flight_buy_wait_ml.ipynb` and script `10_Flight_Price_Buy_Wait_ML.p
 
    - Classification report (precision, recall, F1 for Buy/Wait).
    - **ROC AUC** for both models.
-   - ROC curve comparison vs random guess.
-
-6. **Helper function**
-
-   - `buy_or_wait()` wraps the trained model + scaler.
-   - Input: a single snapshot’s features.
-   - Output: `"Buy"` / `"Wait"` + probability of **Wait**.
-   - Ready to feed into app logic or alerts.
-     
+   - Random Forest feature importance plot (which features drive Buy vs Wait).
 
 
+## 5. How to Run the Buy/Wait ML Script
+
+Clone the repo
+
+git clone https://github.com/rihua-tech/flight-price-analytics.git
+cd flight-price-analytics
+
+Create and activate a virtual env
+
+python -m venv .venv
+
+#### Windows
+.venv\Scripts\activate
+
+#### macOS / Linux
+source .venv/bin/activate
+
+Install dependencies (minimal)
+
+pip install pandas numpy scikit-learn matplotlib
+
+Run the script
+
+python 09_flight_buy_wait_ml.py
+
+You should see in the console:
+
+- basic label distribution (Buy vs Wait)
+- baseline (“always Buy”) classification report
+- logistic regression metrics + ROC AUC
+- random forest metrics + ROC AUC
+- a Random Forest feature importance chart popping up
 
 
 ## 5. How to Run the Buy/Wait ML Script
