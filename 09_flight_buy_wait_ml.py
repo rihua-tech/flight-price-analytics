@@ -30,24 +30,18 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score, precision_score
+
 
 # ---------------- CONFIG ---------------- #
 
-# Raw snapshot data (already aggregated to one CSV in this repo)
 DATA_PATH = "fares_fact.csv"
 
-# Label rules:
-# if within HORIZON_DAYS a cheaper price appears that is at least
-# DROP_PCT_THRESHOLD lower than today, label = Wait (1), else Buy (0)
 DROP_PCT_THRESHOLD = 0.05  # 5% cheaper
 HORIZON_DAYS = 7           # look-ahead horizon in days
 
-# Time-based split: first 80% of snapshot dates for training,
-# last 20% for testing
 TRAIN_FRACTION = 0.8
 
-# Features used by the models
 FEATURE_COLS = [
     "price",
     "pct_change_7d",
@@ -58,19 +52,12 @@ FEATURE_COLS = [
     "is_weekend",
 ]
 
+ALERT_TOP_K = 0.20  # top 20% most confident BUY/WAIT signals
+
 
 # --------------- DATA LOADING ------------ #
 
 def load_and_clean(path: str) -> pd.DataFrame:
-    """
-    Load raw Travelpayouts-style snapshot data and do basic cleaning.
-    Expected raw columns (can be adjusted to match your dataset):
-
-    - route          -> renamed to route_id
-    - check_date     -> renamed to snapshot_date
-    - departure_date -> renamed to depart_date
-    - price          -> numeric fare
-    """
     df_raw = pd.read_csv(path)
 
     df = df_raw.rename(
@@ -81,34 +68,20 @@ def load_and_clean(path: str) -> pd.DataFrame:
         }
     )
 
-    # Parse dates
     df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
     df["depart_date"] = pd.to_datetime(df["depart_date"])
 
-    # Basic cleaning
     core_cols = ["route_id", "snapshot_date", "depart_date", "price"]
     df = df.dropna(subset=core_cols)
     df = df[df["price"] > 0]
 
-    # Sort by route / departure / snapshot (time series order)
-    df = df.sort_values(["route_id", "depart_date", "snapshot_date"]).reset_index(
-        drop=True
-    )
+    df = df.sort_values(["route_id", "depart_date", "snapshot_date"]).reset_index(drop=True)
     return df
 
 
 # ------------- FEATURE ENGINEERING -------- #
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Add time-based and volatility features:
-
-    - days_to_departure: days from snapshot_date to depart_date
-    - dow/month: day-of-week, month
-    - is_weekend: whether snapshot_date is Sat/Sun
-    - rolling_mean_7d, rolling_std_7d: rolling stats by route_id + depart_date
-    - pct_change_7d: deviation from rolling mean
-    """
     df = df.copy()
 
     df["days_to_departure"] = (df["depart_date"] - df["snapshot_date"]).dt.days
@@ -119,7 +92,6 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
     group_cols = ["route_id", "depart_date"]
     df = df.sort_values(group_cols + ["snapshot_date"])
 
-    # Rolling stats within each (route, depart_date) group
     df["rolling_mean_7d"] = df.groupby(group_cols)["price"].transform(
         lambda s: s.rolling(window=7, min_periods=3).mean()
     )
@@ -127,22 +99,13 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
         lambda s: s.rolling(window=7, min_periods=3).std()
     )
 
-    # Deviation from rolling mean（相对均值的偏离）
     df["pct_change_7d"] = (df["price"] - df["rolling_mean_7d"]) / df["rolling_mean_7d"]
-
     return df
 
 
 # ------------- LABEL CREATION ------------- #
 
 def _compute_labels_for_group(group: pd.DataFrame) -> pd.DataFrame:
-    """
-    For a single (route_id, depart_date) group, look forward HORIZON_DAYS
-    from each snapshot_date and label:
-    - 1 (Wait) if a cheaper price <= current_price * (1 - DROP_PCT_THRESHOLD)
-      appears within the horizon
-    - 0 (Buy) otherwise
-    """
     prices = group["price"].values
     dates = group["snapshot_date"].values
     n = len(group)
@@ -157,12 +120,8 @@ def _compute_labels_for_group(group: pd.DataFrame) -> pd.DataFrame:
 
         if mask.any():
             future_min = prices[mask].min()
-            if future_min <= current_price * (1 - DROP_PCT_THRESHOLD):
-                labels[i] = 1  # Wait
-            else:
-                labels[i] = 0  # Buy
+            labels[i] = 1 if future_min <= current_price * (1 - DROP_PCT_THRESHOLD) else 0
         else:
-            # No future data within horizon -> default Buy
             labels[i] = 0
 
     group = group.copy()
@@ -171,22 +130,13 @@ def _compute_labels_for_group(group: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_labels(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Apply Buy/Wait labeling per (route_id, depart_date).
-    """
-    df_labeled = df.groupby(["route_id", "depart_date"], group_keys=False).apply(
-        _compute_labels_for_group
-    )
+    df_labeled = df.groupby(["route_id", "depart_date"], group_keys=False).apply(_compute_labels_for_group)
     return df_labeled
 
 
 # ------------- TIME-BASED SPLIT ----------- #
 
 def time_based_split(model_df: pd.DataFrame):
-    """
-    Split into train/test by snapshot_date so that the model only sees
-    'past' snapshots when predicting 'future' ones.
-    """
     unique_dates = np.sort(model_df["snapshot_date"].unique())
     split_idx = int(len(unique_dates) * TRAIN_FRACTION)
     train_cutoff = unique_dates[split_idx]
@@ -209,10 +159,6 @@ class Dataset:
 
 
 def make_dataset(df: pd.DataFrame) -> Dataset:
-    """
-    Build scaled train/test arrays for Logistic Regression,
-    using a time-based split on snapshot_date.
-    """
     model_df = df.dropna(subset=FEATURE_COLS + ["label_wait"]).copy()
 
     train_df, test_df = time_based_split(model_df)
@@ -239,9 +185,6 @@ def make_dataset(df: pd.DataFrame) -> Dataset:
 # ------------- MODEL TRAINING ------------- #
 
 def train_log_reg(ds: Dataset) -> LogisticRegression:
-    """
-    Logistic Regression with balanced classes and L2 regularization.
-    """
     model = LogisticRegression(
         penalty="l2",
         C=1.0,
@@ -253,13 +196,7 @@ def train_log_reg(ds: Dataset) -> LogisticRegression:
     return model
 
 
-def train_random_forest(
-    df: pd.DataFrame,
-) -> tuple[RandomForestClassifier, np.ndarray, np.ndarray]:
-    """
-    Random Forest classifier on the same time-based split,
-    using unscaled features.
-    """
+def train_random_forest(df: pd.DataFrame) -> tuple[RandomForestClassifier, np.ndarray, np.ndarray]:
     model_df = df.dropna(subset=FEATURE_COLS + ["label_wait"]).copy()
     train_df, test_df = time_based_split(model_df)
 
@@ -282,14 +219,41 @@ def train_random_forest(
     return rf, X_test, y_test
 
 
+# ------------- ALERT REPORTING (TOP-K) ------------- #
+
+def report_topk_alerts(y_true: np.ndarray, y_prob_wait: np.ndarray, k: float = 0.20) -> None:
+    """
+    Top-K alerting:
+    - WAIT alert = top k most confident WAIT predictions (highest P(Wait))
+    - BUY  alert = top k most confident BUY predictions  (highest P(Buy)=1-P(Wait))
+
+    Prints:
+    - precision: when we alert, how often we are correct
+    - coverage: how often we alert (alert volume)
+    """
+    y_true = np.asarray(y_true)
+    y_prob_wait = np.asarray(y_prob_wait)
+    y_prob_buy = 1.0 - y_prob_wait
+
+    thr_wait = np.quantile(y_prob_wait, 1 - k)
+    thr_buy = np.quantile(y_prob_buy, 1 - k)
+
+    wait_alert = (y_prob_wait >= thr_wait)
+    buy_alert = (y_prob_buy >= thr_buy)
+
+    wait_precision = precision_score((y_true == 1).astype(int), wait_alert.astype(int), zero_division=0)
+    buy_precision = precision_score((y_true == 0).astype(int), buy_alert.astype(int), zero_division=0)
+
+    wait_coverage = wait_alert.mean()
+    buy_coverage = buy_alert.mean()
+
+    print(f"Top-{int(k*100)}% WAIT alerts: precision={wait_precision:.3f}, coverage={wait_coverage:.3f}")
+    print(f"Top-{int(k*100)}% BUY  alerts: precision={buy_precision:.3f}, coverage={buy_coverage:.3f}")
+
+
 # ------------- VISUALIZATION -------------- #
 
-def plot_rf_feature_importance(
-    model: RandomForestClassifier, feature_names: list[str]
-) -> None:
-    """
-    Plot feature importance for the Random Forest model.
-    """
+def plot_rf_feature_importance(model: RandomForestClassifier, feature_names: list[str]) -> None:
     importances = model.feature_importances_
     indices = np.argsort(importances)
 
@@ -305,44 +269,40 @@ def plot_rf_feature_importance(
 # ------------- MAIN PIPELINE -------------- #
 
 def main() -> None:
-    # 1. Load & clean
     print("1) Loading data...")
     df = load_and_clean(DATA_PATH)
     print("Rows after cleaning:", len(df))
 
-    # 2. Feature engineering
     print("2) Engineering features...")
     df = add_features(df)
 
-    # 3. Label creation
     print("3) Creating Buy/Wait labels...")
     df = add_labels(df)
     print("Label distribution (0=Buy, 1=Wait):")
     print(df["label_wait"].value_counts(normalize=True).rename("proportion"))
 
-    # 4. Dataset & baseline + Logistic Regression
     print("\n4) Time-based split & dataset...")
     ds = make_dataset(df)
 
     print("\n=== Baseline (Always Buy) ===")
-    # Baseline: always predict Buy (0)
     y_pred_base = np.zeros_like(ds.y_test)
-    print(classification_report(ds.y_test, y_pred_base, target_names=["Buy", "Wait"]))
+    print(classification_report(ds.y_test, y_pred_base, target_names=["Buy", "Wait"], zero_division=0))
 
     print("\n=== Logistic Regression ===")
     log_reg = train_log_reg(ds)
     y_pred_lr = log_reg.predict(ds.X_test)
     y_proba_lr = log_reg.predict_proba(ds.X_test)[:, 1]
-    print(classification_report(ds.y_test, y_pred_lr, target_names=["Buy", "Wait"]))
+    print(classification_report(ds.y_test, y_pred_lr, target_names=["Buy", "Wait"], zero_division=0))
     print("ROC AUC (LogReg):", roc_auc_score(ds.y_test, y_proba_lr))
+    report_topk_alerts(ds.y_test, y_proba_lr, k=ALERT_TOP_K)
 
-    # 5. Random Forest + feature importance
     print("\n=== Random Forest ===")
     rf, X_test_rf, y_test_rf = train_random_forest(df)
     y_pred_rf = rf.predict(X_test_rf)
     y_proba_rf = rf.predict_proba(X_test_rf)[:, 1]
-    print(classification_report(y_test_rf, y_pred_rf, target_names=["Buy", "Wait"]))
+    print(classification_report(y_test_rf, y_pred_rf, target_names=["Buy", "Wait"], zero_division=0))
     print("ROC AUC (RandomForest):", roc_auc_score(y_test_rf, y_proba_rf))
+    report_topk_alerts(y_test_rf, y_proba_rf, k=ALERT_TOP_K)
 
     print("\nPlotting Random Forest feature importance...")
     plot_rf_feature_importance(rf, FEATURE_COLS)
